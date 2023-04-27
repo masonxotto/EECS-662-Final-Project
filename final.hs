@@ -156,6 +156,7 @@ eval e (Between l c r) = do {
 
 eval e (Bind i v b) = eval e (App (Lambda i b) v)
 
+
 evalReader :: KULang -> Reader EnvVal KULangVal
 evalReader (Num x) = if x<0 then error "fail" else return (NumV x)
 
@@ -212,6 +213,9 @@ evalReader (App f a) = do {
   local (useClosure i v e) (evalReader b)
 }
 
--- Exercise 6:
-interpReader :: KULang -> KULangVal
-interpReader x = runR (evalReader (eval x)) []
+interpret :: KULang -> (Maybe KULangVal)
+-- interpret expr = if typeofMonad [] expr == Nothing then Nothing else evalDeferred [] expr
+interpret str = eval [] str
+
+-- interpReader :: KULang -> KULangVal
+-- interpReader x = runR (evalReader x) []
