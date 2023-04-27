@@ -67,6 +67,7 @@ local f r = ask >>= \e -> return (runR r (f e))
 useClosure :: String -> KULangVal -> EnvVal -> EnvVal -> EnvVal
 useClosure i v e _ = (i,v):e 
 
+--evaluation 
 eval :: EnvVal -> KULang -> (Maybe KULangVal)
 eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
