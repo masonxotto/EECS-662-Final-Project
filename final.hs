@@ -19,26 +19,14 @@ data KULang where
     Leq :: KULang -> KULang -> KULang  
     IsZero :: KULang -> KULang  
     If :: KULang -> KULang -> KULang -> KULang  
+    Bind :: String -> KULang -> KULang -> KULang
     Between :: KULang -> KULang -> KULang -> KULang
     deriving (Show,Eq)
 
 data KULangVal where
     NumV :: Int -> KULangVal
+    BooleanV :: Bool -> KULangVal
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
-    deriving (Show,Eq)
-
-data KULangExt where
-    NumX :: Int -> KULangExt
-    PlusX :: KULangExt -> KULangExt -> KULangExt
-    MinusX :: KULangExt -> KULangExt -> KULangExt
-    MultX :: KULangExt -> KULangExt -> KULangExt
-    DivX :: KULangExt -> KULangExt -> KULangExt
-    ExpX :: KULangExt -> KULangExt -> KULangExt
-    If0X :: KULangExt -> KULangExt -> KULangExt -> KULangExt
-    LambdaX :: String -> KULangExt -> KULangExt
-    AppX :: KULangExt -> KULangExt -> KULangExt 
-    BindX :: String -> KULangExt -> KULangExt -> KULangExt
-    IdX :: String -> KULangExt
     deriving (Show,Eq)
 
 -- Environment Definitions
@@ -79,134 +67,95 @@ local f r = ask >>= \e -> return (runR r (f e))
 useClosure :: String -> KULangVal -> EnvVal -> EnvVal -> EnvVal
 useClosure i v e _ = (i,v):e 
 
+eval :: EnvVal -> KULang -> (Maybe KULangVal)
+eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
------------------------------
------ Project Exercises -----
------------------------------
+eval e(Boolean b) = Just (BooleanV b)
 
--- Part 1: Scoping
-
--- Exercise 1:
-evalDyn :: Env -> KULang -> (Maybe KULang)
-evalDyn e (Num x) = if x<0 then Nothing else Just (Num x)
-
-evalDyn e (Plus l r) = do {
-  Num x <- evalDyn e l;
-  Num y <- evalDyn e r;
-  return (Num (x+y))
-}
-
-evalDyn e (Minus l r) = do {
-  Num x <- evalDyn e l;
-  Num y <- evalDyn e r;
-  if (x-y)<0 then Nothing else Just (Num (x-y))
-}
-
-evalDyn e (Mult l r) = do {
-  Num x <- evalDyn e l;
-  Num y <- evalDyn e r;
-  return (Num (x*y))
-}
-
-evalDyn e (Div l r) = do {
-  Num x <- evalDyn e l;
-  Num y <- evalDyn e r;
-  if y == 0 then Nothing else return (Num (x `div` y)) 
-}
-
-evalDyn e (Exp l r) = do {
-  Num x <- evalDyn e l;
-  Num y <- evalDyn e r;
-  return (Num (x^y))
-}
-
-evalDyn e (If0 c t f) = do {
-    c' <- evalDyn e c;
-    if c' == Num 0 then evalDyn e t else evalDyn e f;
-} 
-
-evalDyn e (Id id) = lookup id e
-
-evalDyn e (Lambda i b) = return (Lambda i b)
-
-evalDyn e (App f a) = do {
-    (Lambda i b) <- evalDyn e f;
-    v <- evalDyn e a;
-    evalDyn ((i,v):e) b;
-} 
-
--- Exercise 2:
-evalStat :: EnvVal -> KULang -> (Maybe KULangVal)
-evalStat e (Num x) = if x<0 then Nothing else Just (NumV x)
-
-evalStat e (Plus l r) = do {
-  NumV x <- evalStat e l;
-  NumV y <- evalStat e r;
+eval e (Plus l r) = do {
+  NumV x <- eval e l;
+  NumV y <- eval e r;
   return (NumV (x+y))
 }
 
-evalStat e (Minus l r) = do {
-  NumV x <- evalStat e l;
-  NumV y <- evalStat e r;
+eval e (Minus l r) = do {
+  NumV x <- eval e l;
+  NumV y <- eval e r;
   if (x-y)<0 then Nothing else Just (NumV (x-y))
 }
 
-evalStat e (Mult l r) = do {
-  NumV x <- evalStat e l;
-  NumV y <- evalStat e r;
+eval e (Mult l r) = do {
+  NumV x <- eval e l;
+  NumV y <- eval e r;
   return (NumV (x*y))
 }
 
-evalStat e (Div l r) = do {
-  NumV x <- evalStat e l;
-  NumV y <- evalStat e r;
+eval e (Div l r) = do {
+  NumV x <- eval e l;
+  NumV y <- eval e r;
   if y == 0 then Nothing else return (NumV (x `div` y)) 
 }
 
-evalStat e (Exp l r) = do {
-  NumV x <- evalStat e l;
-  NumV y <- evalStat e r;
+eval e (Exp l r) = do {
+  NumV x <- eval e l;
+  NumV y <- eval e r;
   return (NumV (x^y))
 }
 
-evalStat e (If0 c t f) = do {
-    c' <- evalStat e c;
-    if c' == NumV 0 then evalStat e t else evalStat e f;
+eval e (If0 c t f) = do {
+    c' <- eval e c;
+    if c' == NumV 0 then eval e t else eval e f;
 } 
 
-evalStat e (Id id) = lookup id e
+eval e (Id id) = lookup id e
 
-evalStat e (Lambda i b) = return (ClosureV i b e)
+eval e (Lambda i b) = return (ClosureV i b e)
 
-evalStat e (App f a) = do {
-    (ClosureV i b j) <- evalStat e f;
-    v <- evalStat e a;
-    evalStat ((i,v):j) b;
+eval e (App f a) = do {
+    (ClosureV i b j) <- eval e f;
+    v <- eval e a;
+    eval ((i,v):j) b;
 }
 
--- Part 2: Elaboration
+eval e (And l r) = do {
+    BooleanV x <- eval e l;
+    BooleanV y <- eval e r;
+    return (BooleanV (x && y))
+}
 
--- Exercise 3:
-elabTerm :: KULangExt -> KULang 
-elabTerm (NumX n) = (Num n)
-elabTerm (PlusX l r) = (Plus (elabTerm l) (elabTerm r))
-elabTerm (MinusX l r) = (Minus (elabTerm l) (elabTerm r))
-elabTerm (MultX l r) = (Mult (elabTerm l) (elabTerm r))
-elabTerm (DivX l r) = (Div (elabTerm l) (elabTerm r))
-elabTerm (ExpX l r) = (Exp (elabTerm l) (elabTerm r))
-elabTerm (If0X c t f) = (If0 (elabTerm c) (elabTerm t) (elabTerm f))
-elabTerm (LambdaX i b) = (Lambda i (elabTerm b))
-elabTerm (IdX x) = (Id x)
-elabTerm (AppX f a) = (App (elabTerm f) (elabTerm a))
-elabTerm (BindX i v b) = (App (Lambda i (elabTerm b)) (elabTerm v))
+eval e (Or l r) = do {
+    BooleanV x <- eval e l;
+    BooleanV y <- eval e r;
+    return (BooleanV (x || y))
+}
 
--- Exercise 4:
-interpElab :: EnvVal -> KULangExt -> (Maybe KULangVal)
-interpElab e t = evalStat e (elabTerm t)
+eval e (Leq l r) = do {
+    NumV x <- eval e l;
+    NumV y <- eval e r;
+    if x <= y then return (BooleanV True) else return (BooleanV False)
+}
 
--- Part 3: Reader Monad
+eval e (IsZero x) = do {
+    NumV y <- eval e x;
+    if y == 0 then return (BooleanV True) else return (BooleanV False)
+}
 
--- Exercise 5:
+eval e (If c t e') = do {
+    BooleanV c' <- eval e c;
+    if c' then eval e t else eval e e'
+}
+
+eval e (Between l c r) = do {
+    NumV l' <- eval e l;
+    NumV c' <- eval e c;
+    if c' > l' then do {
+        NumV r' <- eval e r;
+        if r' > c' then return (BooleanV True) else return (BooleanV False)
+    } else return (BooleanV False)
+}
+
+eval e (Bind i v b) = eval e (App (Lambda i b) v)
+
 evalReader :: KULang -> Reader EnvVal KULangVal
 evalReader (Num x) = if x<0 then error "fail" else return (NumV x)
 
@@ -264,5 +213,5 @@ evalReader (App f a) = do {
 }
 
 -- Exercise 6:
-interpReader :: KULangExt -> KULangVal
-interpReader x = runR (evalReader (elabTerm x)) []
+interpReader :: KULang -> KULangVal
+interpReader x = runR (evalReader (eval x)) []
