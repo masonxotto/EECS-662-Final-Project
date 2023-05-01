@@ -67,7 +67,7 @@ local f r = ask >>= \e -> return (runR r (f e))
 useClosure :: String -> KULangVal -> EnvVal -> EnvVal -> EnvVal
 useClosure i v e _ = (i,v):e 
 
---evaluation 
+--Evaluation 
 eval :: EnvVal -> KULang -> (Maybe KULangVal)
 eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
@@ -157,6 +157,11 @@ eval e (Between l c r) = do {
 
 eval e (Bind i v b) = eval e (App (Lambda i b) v)
 
+--Type Inference
+
+--Fixed Point Operator 
+
+
 
 evalReader :: KULang -> Reader EnvVal KULangVal
 evalReader (Num x) = if x<0 then error "fail" else return (NumV x)
@@ -214,6 +219,7 @@ evalReader (App f a) = do {
   local (useClosure i v e) (evalReader b)
 }
 
+--Interpretation 
 interpret :: KULang -> (Maybe KULangVal)
 -- interpret expr = if typeofMonad [] expr == Nothing then Nothing else evalDeferred [] expr
 interpret str = eval [] str
