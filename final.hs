@@ -30,7 +30,7 @@ data KULangVal where
     BooleanV :: Bool -> KULangVal
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
     (:->:) :: KULangVal -> KULangVal -> KULangVal
-    UnitV :: KULangVal
+    UnitV :: KULangVal -- New Feature
     deriving (Show,Eq)
 
 -- Environment Definitions
