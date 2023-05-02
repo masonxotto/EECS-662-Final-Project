@@ -28,6 +28,7 @@ data KULangVal where
     NumV :: Int -> KULangVal
     BooleanV :: Bool -> KULangVal
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
+    UnitV :: KULangVal
     deriving (Show,Eq)
 
 data KUTypeLang where
