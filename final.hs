@@ -2,6 +2,12 @@
 {-# OPTIONS_GHC -Wno-missing-methods #-}
 
 -- Abstract Syntax Definitions
+data KUTypeLang where
+    TNum :: KUTypeLang
+    TBool :: KUTypeLang
+    (:->:) :: KUTypeLang -> KUTypeLang -> KUTypeLang 
+    deriving (Show, Eq)
+
 data KULang where
     Num :: Int -> KULang  
     Boolean :: Bool -> KULang
@@ -20,6 +26,7 @@ data KULang where
     IsZero :: KULang -> KULang  
     If :: KULang -> KULang -> KULang -> KULang  
     Between :: KULang -> KULang -> KULang -> KULang
+    Fix :: (KULang -> KULang) -> KULang
     deriving (Show,Eq)
 
 data KULangVal where
@@ -41,9 +48,10 @@ data KULangExt where
     IdX :: String -> KULangExt
     deriving (Show,Eq)
 
--- Environment Definitions
+-- Environment & Gamma Definitions
 type Env = [(String,KULang)]
 type EnvVal = [(String,KULangVal)]
+type Gamma = [(string, KUTypeLang)]
 
 -- Reader Definition
 data Reader e a = Reader (e -> a)
@@ -83,6 +91,72 @@ useClosure i v e _ = (i,v):e
 -----------------------------
 ----- Project Exercises -----
 -----------------------------
+
+-- Implementing Types
+typeofMonad :: Gamma -> KULang -> Maybe KUTypeLang
+typeofMonad _ (Num n) = if n>=0 then return TNum else Nothing
+typeofMonad _ (Boolean b) = return TBool
+typeofMonad g (Plus l r) = do {TNum <- typeofMonad g l;
+                             TNum <- typeofMonad g r;
+                             return TNum}
+                             
+typeofMonad g (Minus l r) = do {TNum <- typeofMonad g l;
+                              TNum <- typeofMonad g r;
+                              return TNum}
+
+typeofMonad g (Mult l r) = do {TNum <- typeofMonad g l;
+                             TNum <- typeofMonad g r;
+                             return TNum}
+
+typeofMonad g (Div n d) = do {TNum <- typeofMonad g n;
+                            TNum <- typeofMonad g d;
+                            return TNum}
+
+typeofMonad g (Exp x n) = do {TNum <- typeofMonad g x;
+                            TNum <- typeofMonad g n;
+                            return TNum}
+
+typeofMonad g (Id x) = lookup x g 
+
+typeofMonad g (Lambda i d b) = do {r <- typeofMonad (i,d):g b;
+                                    return d :->: r}
+
+typeofMonad g (App f a) = do {a' <- typeofMonad g a;
+                              d :->: r <- typeofMonad g f;
+                              if a'==d then return r else Nothing}
+
+typeofMonad g (And l r) = do {TBool<-typeofMonad g l;
+                            TBool<-typeofMonad g r;
+                            return TBool}
+
+typeofMonad g (Or l r) = do {TBool<-typeofMonad g l;
+                            TBool<-typeofMonad g r;
+                            return TBool}
+
+typeofMonad g (Leq l r) = do {TNum<-typeofMonad g l;
+                            TNum<-typeofMonad g r;
+                            return TBool}
+
+typeofMonad g (IsZero x) = do{TNum<-typeofMonad g x;
+                            return TBool}
+
+typeofMonad g (If c t e) = do{TBool<-typeofMonad g c;
+                            t'<- typeofMonad g t;
+                            e'<- typeofMonad g e;
+                            if t' == e' then return t' else Nothing}
+
+typeofMonad g (Between s m e) = do{TNum<- typeofMonad g s;
+                                 TNum<- typeofMonad g m;
+                                 TNum<- typeofMonad g e';
+                                 return TBool}
+
+typeofMonad g (Fix x) = 
+
+typeofMonad g (Bind i v b) = do {tv <- typeofMonad g v;
+                                 typeofMonad (i,tv):g b}
+
+typeofMonad _ = Nothing
+
 
 -- Part 1: Scoping
 
