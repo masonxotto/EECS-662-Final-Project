@@ -128,7 +128,7 @@ typeof g (Exp x n) = do {TNum <- typeof g x;
 typeof g (Id x) = lookup x g 
 
 typeof g (Lambda i d b) = do {r <- typeof ((i,d):g) b;
-                              return d (:->:) r}
+                              return ((:->:) d r)}
 
 typeof g (App f a) = do {a' <- typeof g a;
                               d :->: r <- typeof g f;
@@ -162,8 +162,8 @@ typeof g (Between s m e) = do{TNum<- typeof g s;
 typeof g (Fix x) = do {(d :->: r) <- typeof g x;
                         return r}
 
-typeof c (Bind i v b) = do {v' <- typeof c v;
-                            typeof ((i,v'):c) b;}
+typeof g (Bind i v b) = do {v' <- typeof g v;
+                            typeof ((i,v'):g) b;}
 
 typeof _ _ = Nothing
 
@@ -258,18 +258,18 @@ eval e (Between l c r) = do {
     } else return (BooleanV False)
 }
 
-eval e (Bind i v b) = eval e (App (Lambda i b) v)
+eval e (Bind i v b) = eval e (App (Lambda i TNum b) v)
 
 --Fixed Point Operator 
 eval e (Fix f) = do {
   (ClosureV i b j) <- eval e f;
-  eval j (subst i (Fix (Lambda i b)) b)}
+  eval j (subst i (Fix (Lambda i TNum b)) b)}
 
 --Type Inference
-typeInfer :: Gamma -> KULang -> Maybe KUTypeLang
+typeInfer :: KULang -> Maybe KUTypeLang
 typeInfer expr = typeof [] expr
 
 --Interpretation 
-interpret :: KULang -> (Maybe KULangVal)
+interpret :: KULang -> Maybe KULangVal
 -- interpret expr = if typeof [] expr == Nothing then Nothing else evalDeferred [] expr
 interpret str = eval [] str
