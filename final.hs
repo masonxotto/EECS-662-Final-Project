@@ -269,7 +269,10 @@ eval e (Fix f) = do {
 typeInfer :: KULang -> Maybe KUTypeLang
 typeInfer expr = typeof [] expr
 
+--Eval Interpret
+evalInterpret :: KULang -> Maybe KULangVal
+evalInterpret expr = eval [] expr
+
 --Interpretation 
 interpret :: KULang -> Maybe KULangVal
--- interpret expr = if typeof [] expr == Nothing then Nothing else evalDeferred [] expr
-interpret str = eval [] str
+interpret expr = if typeof [] expr == Nothing then Nothing else eval [] expr
