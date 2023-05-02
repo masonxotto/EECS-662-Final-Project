@@ -102,9 +102,6 @@ subst x t (Lambda i b) = if x==i
   else Lambda i (subst x t b)
 subst x t (App f a) = App (subst x t f) (subst x t a)
 
---Evaluation 
-eval :: EnvVal -> KULang -> Maybe KULangVal
-eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
 -- Implementing Types
 typeofMonad :: Gamma -> KULang -> Maybe KUTypeLang
@@ -173,6 +170,11 @@ typeofMonad _ = Nothing
 
 
 -- Part 1: Scoping
+--Evaluation 
+eval :: EnvVal -> KULang -> Maybe KULangVal
+
+eval e (Num x) = if x<0 then Nothing else Just (NumV x)
+
 eval e (Boolean b) = Just (BooleanV b)
 
 eval e (Plus l r) = do {
