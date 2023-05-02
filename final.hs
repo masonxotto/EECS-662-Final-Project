@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs,FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
+import Data.Function (fix)
 
 -- Abstract Syntax Definitions
 data KULang where
@@ -160,9 +161,10 @@ eval e (Bind i v b) = eval e (App (Lambda i b) v)
 --Type Inference
 
 --Fixed Point Operator 
+fixedPoint :: Eq a => (a -> a) -> a -> a
+fixedPoint f x = fix (\g y -> if f y == y then y else g (f y)) x
 
-
-
+--Reader Monad
 evalReader :: KULang -> Reader EnvVal KULangVal
 evalReader (Num x) = if x<0 then error "fail" else return (NumV x)
 
