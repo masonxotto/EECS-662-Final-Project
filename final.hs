@@ -31,10 +31,11 @@ data KULangVal where
     UnitV :: KULangVal
     deriving (Show,Eq)
 
-data KUTypeLang where
-    TNum :: KUTypeLang
-    TBool :: KUTypeLang
-    TVal :: String -> KUTypeLang
+data KUType where
+    TNum :: KUType
+    TBool :: KUType
+    TVal :: String -> KUType
+    TUnit :: KUType -> KUType -> KUType
     deriving (Show,Eq)
 
 -- Environment Definitions
