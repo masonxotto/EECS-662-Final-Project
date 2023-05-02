@@ -101,8 +101,6 @@ eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
 eval e (Boolean b) = Just (BooleanV b)
 
-
-
 eval e (Plus l r) = do {
   NumV x <- eval e l;
   NumV y <- eval e r;
@@ -194,7 +192,6 @@ eval e (Fix f) = do {
 
 --Type Inference
 -- typeInfer :: TypeEnv -> KULang -> Maybe KUTypeLangVal
-
 
 
 --Reader Monad
