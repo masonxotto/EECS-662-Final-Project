@@ -1,11 +1,11 @@
 {-# LANGUAGE GADTs,FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
-import Data.Function (fix)
 
 -- Abstract Syntax Definitions
 data KULang where
     Num :: Int -> KULang  
     Boolean :: Bool -> KULang
+    -- (:->:) :: KULangVal -> KULangVal -> KULang
     Plus :: KULang -> KULang -> KULang 
     Minus :: KULang -> KULang -> KULang
     Mult :: KULang -> KULang -> KULang 
@@ -22,12 +22,14 @@ data KULang where
     If :: KULang -> KULang -> KULang -> KULang  
     Bind :: String -> KULang -> KULang -> KULang
     Between :: KULang -> KULang -> KULang -> KULang
+    Fix :: KULang -> KULang
     deriving (Show,Eq)
 
 data KULangVal where
     NumV :: Int -> KULangVal
     BooleanV :: Bool -> KULangVal
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
+    (:->:) :: KULangVal -> KULangVal -> KULangVal
     deriving (Show,Eq)
 
 -- Environment Definitions
@@ -68,11 +70,37 @@ local f r = ask >>= \e -> return (runR r (f e))
 useClosure :: String -> KULangVal -> EnvVal -> EnvVal -> EnvVal
 useClosure i v e _ = (i,v):e 
 
+subst :: String -> KULang -> KULang -> KULang
+subst i v (Num x) = Num x
+subst i v (Boolean b) = Boolean b
+subst i v (Plus l r) = Plus (subst i v l) (subst i v r)
+subst i v (Minus l r) = Minus (subst i v l) (subst i v r)
+subst i v (Mult l r) = Mult (subst i v l) (subst i v r)
+subst i v (Div l r) = Div (subst i v l) (subst i v r)
+subst i v (Exp l r) = Exp (subst i v l) (subst i v r)
+subst i v (And l r) = And (subst i v l) (subst i v r)
+subst i v (Or l r) = Or (subst i v l) (subst i v r)
+subst i v (Leq l r) = Leq (subst i v l) (subst i v r)
+subst i v (IsZero x) = IsZero (subst i v x)
+subst i v (If c t e) = If (subst i v c) (subst i v t) (subst i v e)
+subst i v (Between l c r) = Between (subst i v l) (subst i v c) (subst i v r)
+subst i v (Id i') = if i == i' then v else Id i'
+subst i v (Bind i' v' b') = if i == i'
+    then Bind i' (subst i v v') b'
+    else Bind i' (subst i v v') (subst i v b')
+subst i v (Fix f) = Fix (subst i v f)
+subst x t (Lambda i b) = if x==i 
+  then Lambda i b
+  else Lambda i (subst x t b)
+subst x t (App f a) = App (subst x t f) (subst x t a)
+
 --Evaluation 
-eval :: EnvVal -> KULang -> (Maybe KULangVal)
+eval :: EnvVal -> KULang -> Maybe KULangVal
 eval e (Num x) = if x<0 then Nothing else Just (NumV x)
 
-eval e(Boolean b) = Just (BooleanV b)
+eval e (Boolean b) = Just (BooleanV b)
+
+
 
 eval e (Plus l r) = do {
   NumV x <- eval e l;
@@ -158,11 +186,13 @@ eval e (Between l c r) = do {
 
 eval e (Bind i v b) = eval e (App (Lambda i b) v)
 
+--Fixed Point Operator 
+eval e (Fix f) = do {
+  (ClosureV i b j) <- eval e f;
+  eval j (subst i (Fix (Lambda i b)) b)}
+
 --Type Inference
 
---Fixed Point Operator 
-fixedPoint :: Eq a => (a -> a) -> a -> a
-fixedPoint f x = fix (\g y -> if f y == y then y else g (f y)) x
 
 --Reader Monad
 evalReader :: KULang -> Reader EnvVal KULangVal
