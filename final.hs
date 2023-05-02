@@ -29,7 +29,7 @@ data KULangVal where
     NumV :: Int -> KULangVal
     BooleanV :: Bool -> KULangVal
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
-    (:->:) :: KULangVal -> KULangVal -> KULangVal
+    UnitV :: KULangVal
     deriving (Show,Eq)
 
 -- Environment Definitions
@@ -192,6 +192,8 @@ eval e (Fix f) = do {
   eval j (subst i (Fix (Lambda i b)) b)}
 
 --Type Inference
+-- typeInfer :: TypeEnv -> KULang -> Maybe KUTypeLangVal
+
 
 
 --Reader Monad
