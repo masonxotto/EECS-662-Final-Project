@@ -127,7 +127,7 @@ typeof g (Exp x n) = do {TNum <- typeof g x;
 
 typeof g (Id x) = lookup x g 
 
-typeof g (Lambda i d b) = do {r <- typeof (i,d):g b;
+typeof g (Lambda i d b) = do {r <- typeof ((i,d):g) b;
                               return d (:->:) r}
 
 typeof g (App f a) = do {a' <- typeof g a;
@@ -162,8 +162,8 @@ typeof g (Between s m e) = do{TNum<- typeof g s;
 typeof g (Fix x) = do {(d :->: r) <- typeof g x;
                         return r}
 
-typeof g (Bind i v b) = do {tv <- typeof g v;
-                            typeof (i,tv):g b}
+typeof c (Bind i v b) = do {v' <- typeof c v;
+                            typeof ((i,v'):c) b;}
 
 typeof _ _ = Nothing
 
