@@ -30,6 +30,12 @@ data KULangVal where
     ClosureV :: String -> KULang -> EnvVal -> KULangVal
     deriving (Show,Eq)
 
+data KUTypeLang where
+    TNum :: KUTypeLang
+    TBool :: KUTypeLang
+    TVal :: String -> KUTypeLang
+    deriving (Show,Eq)
+
 -- Environment Definitions
 type Env = [(String,KULang)]
 type EnvVal = [(String,KULangVal)]
@@ -159,6 +165,8 @@ eval e (Between l c r) = do {
 eval e (Bind i v b) = eval e (App (Lambda i b) v)
 
 --Type Inference
+typeInfer :: TypeEnv -> KULang -> ...
+
 
 --Fixed Point Operator 
 fixedPoint :: Eq a => (a -> a) -> a -> a
