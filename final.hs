@@ -166,7 +166,7 @@ eval e (Between l c r) = do {
 eval e (Bind i v b) = eval e (App (Lambda i b) v)
 
 --Type Inference
-typeInfer :: TypeEnv -> KULang -> ...
+typeInfer :: TypeEnv -> KULang -> Maybe KUTypeLangVal
 
 
 --Fixed Point Operator 
