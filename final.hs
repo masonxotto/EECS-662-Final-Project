@@ -5,6 +5,7 @@
 data KUTypeLang where
     TNum :: KUTypeLang
     TBool :: KUTypeLang
+    TVoid :: KUTypeLang --New Feature
     (:->:) :: KUTypeLang -> KUTypeLang -> KUTypeLang 
     deriving (Show, Eq)
 
@@ -167,8 +168,6 @@ typeof g (Bind i v b) = do {v' <- typeof g v;
 
 typeof _ _ = Nothing
 
-
--- Part 1: Scoping
 --Evaluation 
 eval :: EnvVal -> KULang -> Maybe KULangVal
 
@@ -258,12 +257,12 @@ eval e (Between l c r) = do {
     } else return (BooleanV False)
 }
 
-eval e (Bind i v b) = eval e (App (Lambda i TNum b) v)
+eval e (Bind i v b) = eval e (App (Lambda i TVoid b) v)
 
 --Fixed Point Operator 
 eval e (Fix f) = do {
   (ClosureV i b j) <- eval e f;
-  eval j (subst i (Fix (Lambda i TNum b)) b)}
+  eval j (subst i (Fix (Lambda i TVoid b)) b)}
 
 --Type Inference
 typeInfer :: KULang -> Maybe KUTypeLang
